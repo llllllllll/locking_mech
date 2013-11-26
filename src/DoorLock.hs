@@ -2,52 +2,45 @@
 -- 24.11.2013
 -- Functions for interacting with the door locking mechanism.
 
-{-# LANGUAGE OverloadedStrings #-}
-
 module DoorLock
     ( module System.Hardware.Arduino
-    , lock_door         -- :: IO ()
-    , unlock_door       -- :: IO ()
+    , lock_door    -- :: IO ()
+    , unlock_door  -- :: IO ()
     ) where
 
 import Control.Concurrent      (forkIO)
 import Control.Monad           (when,liftM)
 import Control.Monad.Trans     (liftIO)
 import System.Hardware.Arduino
+import System.Hardware.Arduino.Parts.Servo
 
 -- Lock the door.
--- TODO: Currently flashes a light.
 lock_door :: IO ()
 lock_door = do
-    forkIO $ withArduino False "/dev/ttyACM0" flash
+    forkIO $ withArduino False "/dev/ttyACM0" lock
     putStrLn "Locking door!"
   where
-      flash = do
+      lock = do
           let led = digital 13
-              pot = analog 3
-          setPinMode pot ANALOG
-          analogRead pot
-          val <- analogRead pot
-          setPinMode   led OUTPUT
+          setPinMode led OUTPUT
+          servo <- attach (digital 3) Nothing Nothing
           digitalWrite led True
           delay 1000
+          setAngle servo 90
           digitalWrite led False
-          delay 1000
+
 
 -- Unlock the door.
--- TODO: Currently flashes a light
 unlock_door :: IO ()
 unlock_door = do
-    forkIO $ withArduino False "/dev/ttyACM0" flash
+    forkIO $ withArduino False "/dev/ttyACM0" unlock
     putStrLn "Unlocking door!"
   where
-      flash = do
+      unlock = do
           let led = digital 13
-              pot = analog 3
-          setPinMode pot ANALOG
-          val <- analogRead pot
           setPinMode led OUTPUT
+          servo <- attach (digital 3) Nothing Nothing
           digitalWrite led True
           delay 1000
+          setAngle servo 0
           digitalWrite led False
-          delay 1000
